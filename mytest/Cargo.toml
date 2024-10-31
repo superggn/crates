@@ -1,5 +1,5 @@
 [package]
-name = "httpie"
+name = "mytest"
 version = "0.1.0"
 edition = "2021"
 

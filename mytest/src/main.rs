@@ -1,6 +1,7 @@
+use mytest::{get, post, Opts, SubCommand};
+
 use anyhow::Result;
 use clap::Parser;
-use httpie::{get, post, Opts, SubCommand};
 use reqwest::header;
 
 #[tokio::main]
