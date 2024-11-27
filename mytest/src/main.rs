@@ -1,36 +1,44 @@
-use anyhow::{Context, Result};
-use thiserror::Error;
-
-#[derive(Error, Debug)]
-enum MyError {
-    #[error("File not found: {0}")]
-    NotFound(String),
-
-    #[error("Permission denied")]
-    PermissionDenied,
+pub trait Executor {
+    fn execute(&self, cmd: &str) -> Result<String, &'static str>;
 }
 
-fn read_file(path: &str) -> Result<String, MyError> {
-    if path == "not_found.txt" {
-        Err(MyError::NotFound(path.to_string()))
-    } else if path == "denied.txt" {
-        Err(MyError::PermissionDenied)
-    } else {
-        Ok("File content".to_string())
+struct BashExecutor {
+    env: String,
+}
+
+impl Executor for BashExecutor {
+    fn execute(&self, cmd: &str) -> Result<String, &'static str> {
+        Ok(format!(
+            "fake bash execute: env: {}, cmd: {}",
+            self.env, cmd
+        ))
     }
 }
 
-fn run(s: &str) -> Result<()> {
-    let content = read_file("not_found.txt")
-        .context(format!("anyhowhowhow~ Failed to read the file: {}", s))?; // 使用 anyhow 添加上下文
-    println!("content: {}", content);
-    Ok(())
+impl<F> Executor for F
+where
+    F: Fn(&str) -> Result<String, &'static str>,
+{
+    fn execute(&self, cmd: &str) -> Result<String, &'static str> {
+        self(cmd)
+    }
 }
+
+// 看看我给的 tonic 的例子，想想怎么实现让 27 行可以正常执行
 
 fn main() {
-    if let Err(e) = run("haha str") {
-        eprintln!("Application error: {:?}", e);
-        println!("====================");
-        println!("{:?}", e);
-    }
+    let env = "PATH=/usr/bin".to_string();
+
+    let cmd = "cat /etc/passwd";
+    let r1 = execute(cmd, BashExecutor { env: env.clone() });
+    println!("{:?}", r1);
+
+    let r2 = execute(cmd, |cmd: &str| {
+        Ok(format!("fake fish execute: env: {}, cmd: {}", env, cmd))
+    });
+    println!("{:?}", r2);
+}
+
+fn execute(cmd: &str, exec: impl Executor) -> Result<String, &'static str> {
+    exec.execute(cmd)
 }

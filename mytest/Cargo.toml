@@ -3,6 +3,9 @@ name = "mytest"
 version = "0.1.0"
 edition = "2021"
 
+[profile.dev]
+debug = 2
+
 [dependencies]
 # regex = "1.11.1"
 # url = "2.5.4"
