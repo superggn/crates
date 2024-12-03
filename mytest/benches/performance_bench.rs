@@ -1,5 +1,5 @@
 use criterion::{criterion_group, criterion_main, Criterion};
-use my_module::*;
+// use my_module::*;
 
 mod my_module {
     pub struct MyStruct {
