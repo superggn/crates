@@ -7,6 +7,9 @@ edition = "2021"
 bytes = "1.9" # 高效处理网络 buffer 的库
 prost = "0.10.4" # 处理 protobuf 的代码
 tracing = "0.1.41" # 日志处理
+thiserror = "2"
+dashmap = "6"
+http = "1.0"
 
 [dev-dependencies]
 anyhow = "1.0.93" # 错误处理
