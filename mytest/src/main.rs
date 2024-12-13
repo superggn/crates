@@ -1,49 +1,20 @@
-trait MyTrait {
-    fn greet(&self) -> String;
+use std::fs::File;
+use std::io::{self, BufReader, BufWriter, Read, Write};
+use std::net::TcpStream;
+
+fn main() -> io::Result<()> {
+    // 从文件读取
+    let file = File::open("example.txt")?;
+    let mut buf_reader = BufReader::new(file);
+
+    // 从 TCP 流写入
+    let stream = TcpStream::connect("127.0.0.1:8080")?;
+    let mut buf_writer = BufWriter::new(stream);
+
+    // 从 Vec<u8> 读取
+    let data: Vec<u8> = vec![1, 2, 3, 4, 5];
+    let cursor = io::Cursor::new(data); // 使用 Cursor 来允许读写 Vec<u8>
+    let mut buf_reader_from_vec = BufReader::new(cursor);
+
+    Ok(())
 }
-
-struct MyStruct {
-    name: String,
-}
-
-impl MyTrait for MyStruct {
-    fn greet(&self) -> String {
-        format!("hello, {}", self.name)
-    }
-}
-
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-
-//     #[test]
-//     fn test_trait() {
-//         let obj = MyStruct {
-//             name: "hahaha".into(),
-//         };
-//         assert_eq!(obj.greet(), "hello, hahaha".to_string());
-//     }
-// }
-
-#[cfg(test)]
-mod mytest {
-    use super::*;
-
-    #[test]
-    fn test_trait_3() {
-        let obj = MyStruct {
-            name: "hahaha".into(),
-        };
-        assert_eq!(obj.greet(), "hello, hahaha".to_string());
-    }
-}
-
-#[test]
-fn test_haha() {
-    let obj = MyStruct {
-        name: "hahaha".into(),
-    };
-    assert_eq!(obj.greet(), "hello, hahaha".to_string());
-}
-
-fn main() {}
