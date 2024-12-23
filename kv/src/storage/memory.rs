@@ -1,4 +1,4 @@
-use crate::{KvError, Kvpair, Storage, Value};
+use crate::{KvError, Kvpair, Storage, StorageIter, Value};
 use dashmap::{mapref::one::Ref, DashMap};
 
 /// 使用 DashMap 构建的 MemTable，实现了 Storage trait
@@ -62,7 +62,10 @@ impl Storage for MemTable {
 
     fn get_iter(&self, table: &str) -> Result<Box<dyn Iterator<Item = Kvpair>>, KvError> {
         let table = self.get_or_create_table(table).clone();
-        let iter = table.into_iter().map(|data| data.into());
+        // let iter = table.into_iter().map(|data| data.into());
+        // 这行改掉了
+        // 使用 StorageIter 裹着， 就不用每次新加一个数据结构， 都写一遍 impl From trait 了
+        let iter = StorageIter::new(table.into_iter());
         Ok(Box::new(iter))
     }
 }
