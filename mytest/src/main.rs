@@ -1,65 +1,37 @@
-use std::marker::PhantomData;
+use std::{cell::RefCell, rc::Rc, thread};
 
-#[derive(Debug, Default)]
-pub struct Equation<IterMethod> {
-    current: u32,
-    _method: PhantomData<IterMethod>,
+#[derive(Debug, Default, Clone)]
+struct Evil {
+    data: Rc<RefCell<usize>>,
 }
 
-// 线性增长
-#[derive(Debug, Default)]
-pub struct Linear;
+// 为 Evil 强行实现 Send，这会让 Rc 整个紊乱
+unsafe impl Send for Evil {}
 
-// 二次增长
-#[derive(Debug, Default)]
-pub struct Quadratic;
+fn main() {
+    let v = Evil::default();
+    let v1 = v.clone();
+    let v2 = v.clone();
 
-impl Iterator for Equation<Linear> {
-    type Item = u32;
+    let t1 = thread::spawn(move || {
+        let v3 = v.clone();
+        let mut data = v3.data.borrow_mut();
+        *data += 1;
+        println!("v3: {:?}", data);
+    });
 
-    fn next(&mut self) -> Option<Self::Item> {
-        self.current += 1;
-        if self.current >= u32::MAX {
-            return None;
-        }
+    let t2 = thread::spawn(move || {
+        let v4 = v1.clone();
+        let mut data = v4.data.borrow_mut();
+        *data += 1;
+        println!("v4: {:?}", data);
+    });
 
-        Some(self.current)
-    }
+    t2.join().unwrap();
+    t1.join().unwrap();
+
+    let mut data = v2.data.borrow_mut();
+    *data += 1;
+
+    println!("v2: {:?}", data);
 }
-
-impl Iterator for Equation<Quadratic> {
-    type Item = u32;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.current += 1;
-        if self.current >= u16::MAX as u32 {
-            return None;
-        }
-
-        Some(self.current * self.current)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_linear() {
-        let mut equation = Equation::<Linear>::default();
-        assert_eq!(Some(1), equation.next());
-        assert_eq!(Some(2), equation.next());
-        assert_eq!(Some(3), equation.next());
-    }
-
-    #[test]
-    fn test_quadratic() {
-        let mut equation = Equation::<Quadratic>::default();
-        assert_eq!(Some(1), equation.next());
-        assert_eq!(Some(4), equation.next());
-        assert_eq!(Some(9), equation.next());
-        let mut equation = Equation::<Quadratic>::default();
-        assert_eq!(Some(1), equation.next());
-    }
-}
-fn main() {}
