@@ -125,7 +125,7 @@ mod tests {
     fn sleddb_basic_interface_should_work() {
         let dir = tempdir().unwrap();
         let store = SledDb::new(dir);
-        test_basi_interface(store);
+        test_basic_interface(store);
     }
 
     #[test]
@@ -136,7 +136,7 @@ mod tests {
     }
 
     #[test]
-    fn sleddb_iter_should_work() {
+    fn sleddb_itker_should_work() {
         let dir = tempdir().unwrap();
         let store = SledDb::new(dir);
         test_get_iter(store);

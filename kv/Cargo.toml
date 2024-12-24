@@ -11,6 +11,7 @@ thiserror = "2"
 dashmap = "6"
 http = "1.0"
 sled = "0.34"
+tempfile = "3"
 
 [dev-dependencies]
 anyhow = "1.0.93" # 错误处理

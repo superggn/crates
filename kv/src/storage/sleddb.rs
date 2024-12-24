@@ -24,9 +24,15 @@ impl SledDb {
 }
 
 /// 把 Option<Result<T, E>> flip 成 Result<Option<T>, E>
-/// 从这个函数里，你可以看到函数式编程的优雅
+/// functional programming
 fn flip<T, E>(x: Option<Result<T, E>>) -> Result<Option<T>, E> {
     x.map_or(Ok(None), |v| v.map(Some))
+}
+
+impl From<sled::Error> for KvError {
+    fn from(err: sled::Error) -> Self {
+        KvError::Internal(err.to_string())
+    }
 }
 
 impl Storage for SledDb {
