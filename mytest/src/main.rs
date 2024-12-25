@@ -1,37 +1,43 @@
-use std::{cell::RefCell, rc::Rc, thread};
+use std::{
+    collections::HashMap,
+    sync::atomic::{AtomicUsize, Ordering},
+};
 
-#[derive(Debug, Default, Clone)]
-struct Evil {
-    data: Rc<RefCell<usize>>,
+// server statistics
+pub struct Metrics(HashMap<&'static str, AtomicUsize>);
+
+impl Metrics {
+    pub fn new(names: &[&'static str]) -> Self {
+        let mut metrics: HashMap<&'static str, AtomicUsize> = HashMap::new();
+        for name in names.iter() {
+            metrics.insert(name, AtomicUsize::new(0));
+        }
+        Self(metrics)
+    }
+
+    pub fn inc(&self, name: &'static str) {
+        if let Some(m) = self.0.get(name) {
+            m.fetch_add(1, Ordering::Relaxed);
+        }
+    }
+
+    pub fn add(&self, name: &'static str, val: usize) {
+        if let Some(m) = self.0.get(name) {
+            m.fetch_add(val, Ordering::Relaxed);
+        }
+    }
+
+    pub fn dec(&self, name: &'static str) {
+        if let Some(m) = self.0.get(name) {
+            m.fetch_sub(1, Ordering::Relaxed);
+        }
+    }
+
+    pub fn snapshot(&self) -> Vec<(&'static str, usize)> {
+        self.0
+            .iter()
+            .map(|(k, v)| (*k, v.load(Ordering::Relaxed)))
+            .collect()
+    }
 }
-
-// 为 Evil 强行实现 Send，这会让 Rc 整个紊乱
-unsafe impl Send for Evil {}
-
-fn main() {
-    let v = Evil::default();
-    let v1 = v.clone();
-    let v2 = v.clone();
-
-    let t1 = thread::spawn(move || {
-        let v3 = v.clone();
-        let mut data = v3.data.borrow_mut();
-        *data += 1;
-        println!("v3: {:?}", data);
-    });
-
-    let t2 = thread::spawn(move || {
-        let v4 = v1.clone();
-        let mut data = v4.data.borrow_mut();
-        *data += 1;
-        println!("v4: {:?}", data);
-    });
-
-    t2.join().unwrap();
-    t1.join().unwrap();
-
-    let mut data = v2.data.borrow_mut();
-    *data += 1;
-
-    println!("v2: {:?}", data);
-}
+fn main() {}
