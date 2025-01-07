@@ -14,6 +14,7 @@ pub struct Sender<T> {
 /// 接收者
 pub struct Receiver<T> {
     shared: Arc<Shared<T>>,
+    cache: VecDeque<T>,
 }
 
 /// 发送者和接收者之间共享一个 VecDeque，用 Mutex 互斥，用 Condvar 通知
@@ -68,16 +69,26 @@ impl<T> Clone for Sender<T> {
 
 impl<T> Drop for Sender<T> {
     fn drop(&mut self) {
-        self.shared.senders.fetch_sub(1, Ordering::AcqRel);
+        let old = self.shared.senders.fetch_sub(1, Ordering::AcqRel);
+        if old <= 1 {
+            self.shared.available.notify_all();
+        }
     }
 }
 
 impl<T> Receiver<T> {
     pub fn recv(&mut self) -> Result<T> {
+        if let Some(v) = self.cache.pop_front() {
+            return Ok(v);
+        }
         let mut inner: MutexGuard<'_, VecDeque<T>> = self.shared.queue.lock().unwrap();
         loop {
             match inner.pop_front() {
                 Some(t) => {
+                    // 这里的 cache 不会有饥饿问题， 因为这是 mpsc 而不是mpmc, 这里只有一个 consumer
+                    if !inner.is_empty() {
+                        std::mem::swap(&mut self.cache, &mut inner);
+                    }
                     return Ok(t);
                 }
                 None if self.total_senders() == 0 => return Err(anyhow!("no senders left")),
@@ -128,7 +139,10 @@ pub fn unbounded<T>() -> (Sender<T>, Receiver<T>) {
         Sender {
             shared: shared.clone(),
         },
-        Receiver { shared },
+        Receiver {
+            shared,
+            cache: VecDeque::with_capacity(INITIAL_SIZE),
+        },
     )
 }
 
@@ -265,13 +279,33 @@ mod tests {
             // 保证 r.recv() 先于 t2 的 drop 执行
             sender.send(0).unwrap();
             assert!(r.recv().is_err());
+            println!("receiver dropped")
         });
         thread::sleep(Duration::from_millis(1));
         thread::spawn(move || {
             receiver.recv().unwrap();
             drop(s);
+            println!("sender dropped")
         });
-
         t1.join().unwrap();
+    }
+
+    #[test]
+    fn channel_fast_path_should_work() {
+        let (mut s, mut r) = unbounded();
+        for i in 0..10usize {
+            s.send(i).unwrap();
+        }
+        assert!(r.cache.is_empty());
+        // 读取一个数据， 此行为会导致 swap, cache 中有数据
+        assert_eq!(0, r.recv().unwrap());
+        // 还有 9 个数据在 cache 中
+        assert_eq!(r.cache.len(), 9);
+        // 在 queue 里没有数据了
+        assert_eq!(s.total_queued_items(), 0);
+        // 从 cache 里读取剩下的数据
+        for (idx, i) in r.into_iter().take(9).enumerate() {
+            assert_eq!(idx + 1, i);
+        }
     }
 }
