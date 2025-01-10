@@ -1,12 +1,28 @@
-use std::mem;
+use futures::stream::{self, StreamExt};
+// use std::collections::Iterator;
+use tokio;
 
-fn main() {
-    let mut x = "hello world".to_string();
-    let mut y = "goodbye world".to_string();
+#[tokio::main]
 
-    mem::swap(&mut x, &mut y);
+async fn main() {
+    let my_stream = stream::iter(vec![1, 2, 3, 4]);
+    let job = my_stream.for_each(|item| async move {
+        println!("Got item: {}", item);
+    });
+    println!("haha");
+    std::thread::sleep(std::time::Duration::from_secs(1));
+    // tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+    println!("sleep over");
+    job.await;
+}
 
-    assert_eq!("goodbye world", x);
-    assert_eq!("hello world", y);
-    println!("assert done!")
+struct AA {}
+
+use std::iter::Iterator;
+
+impl Iterator for AA {
+    type Item = usize;
+    fn next(&mut self) -> Option<usize> {
+        Some(1)
+    }
 }
