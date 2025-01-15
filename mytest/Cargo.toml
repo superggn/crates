@@ -3,6 +3,9 @@ name = "mytest"
 version = "0.1.0"
 edition = "2021"
 
+# [lib]
+# proc_macro = true
+
 [profile.dev]
 debug = 2
 
@@ -15,6 +18,7 @@ bytes = "1.9"
 tokio = { version = "1", features = ["full"] }
 tokio-util = { version = "0.7", features = ["full"] }
 futures = "0.3"
+pin-project = "1.1.8"
 
 [dev-dependencies]
 criterion = "0.5"
