@@ -1,51 +1,52 @@
-use futures::prelude::*;
-use pin_project::pin_project;
-use std::{
-    pin::Pin,
-    task::{Context, Poll},
-};
-use tokio::{
-    fs,
-    io::{AsyncBufReadExt, AsyncRead, BufReader, Lines},
-};
+// use anyhow::Result;
+// use futures::prelude::*;
+// use tokio::{fs::File, io::AsyncWriteExt};
 
-/// LineStream 内部使用 tokio::io::Lines
-#[pin_project]
-struct LineStream<R> {
-    #[pin]
-    lines: Lines<BufReader<R>>,
-}
+// #[tokio::main]
+// async fn main() -> Result<()> {
+//     let file_sink = writer(File::create("/tmp/hello").await?);
+//     // pin_mut 可以把变量 pin 住
+//     futures::pin_mut!(file_sink);
+//     if let Err(_) = file_sink.send("hello\\n").await {
+//         println!("Error on send");
+//     }
+//     if let Err(_) = file_sink.send("world!\\n").await {
+//         println!("Error on send");
+//     }
+//     Ok(())
+// }
 
-impl<R: AsyncRead> LineStream<R> {
-    /// 从 BufReader 创建一个 LineStream
-    pub fn new(reader: BufReader<R>) -> Self {
-        Self {
-            lines: reader.lines(),
-        }
-    }
-}
-
-// use std::result::Result;
-
-/// 为 LineStream 实现 Stream trait
-impl<R: AsyncRead> Stream for LineStream<R> {
-    type Item = std::io::Result<String>;
-
-    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        self.project()
-            .lines
-            .poll_next_line(cx)
-            .map(Result::transpose)
-    }
-}
+// /// 使用 unfold 生成一个 Sink 数据结构
+// fn writer<'a>(file: File) -> impl Sink<&'a str> {
+//     sink::unfold(file, |mut file, line: &'a str| async move {
+//         file.write_all(line.as_bytes()).await?;
+//         eprint!("Received: {}", line);
+//         Ok::<_, std::io::Error>(file)
+//     })
+// }
+use anyhow::Result;
+use futures::sink::{self, Sink, SinkExt};
+use tokio::{self, fs::File, io::AsyncWriteExt};
+// use tokio::
 
 #[tokio::main]
-async fn main() -> std::io::Result<()> {
-    let file = fs::File::open("Cargo.toml").await?;
-    let reader = BufReader::new(file);
-    let mut st = LineStream::new(reader);
-    while let Some(Ok(line)) = st.next().await {
-        println!("Got: {}", line);
+async fn main() -> Result<()> {
+    let file_sink = writer(File::create("/tmp/hello").await?);
+    futures::pin_mut!(file_sink);
+    if let Err(_) = file_sink.send("hello\n").await {
+        println!("error on send!");
     }
+    if let Err(_) = file_sink.send("world\n").await {
+        println!("Error on send");
+    }
+    // todo!();
     Ok(())
+}
+
+fn writer<'a>(file: File) -> impl Sink<&'a str> {
+    sink::unfold(file, |mut file, line: &'a str| async move {
+        file.write_all(line.as_bytes()).await?;
+        eprint!("Hahaha IT'S MY LIFE CS GOGOGO!!! Received: {}", line);
+        Ok::<_, std::io::Error>(file)
+    })
 }

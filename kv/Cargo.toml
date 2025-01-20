@@ -15,7 +15,8 @@ tempfile = "3"
 tokio = { version = "1.41.1", features = [ "full" ] } # 异步网络库
 tokio-rustls = "0.22"
 rustls-native-certs = "0.5"
-
+futures = "0.3"
+flate2 = "1" # gzip 压缩
 
 [dev-dependencies]
 anyhow = "1.0.93" # 错误处理
