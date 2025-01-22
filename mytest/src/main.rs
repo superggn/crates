@@ -26,8 +26,22 @@
 // }
 use anyhow::Result;
 use futures::sink::{self, Sink, SinkExt};
+use futures::stream::Stream;
+use std::io::{BufRead, BufReader, BufWriter, Read, Write};
+
+use tokio::io::AsyncBufRead;
+use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite};
+// use tokio::net::TcpStream;
+// use std::net::{TcpStream};
+use serde::{Deserialize, Serialize};
+// use std::fs::File;
+use tokio::net::TcpStream;
 use tokio::{self, fs::File, io::AsyncWriteExt};
-// use tokio::
+
+#[derive(Deserialize, Serialize)]
+struct MyStruct {
+    name: String,
+}
 
 #[tokio::main]
 async fn main() -> Result<()> {
