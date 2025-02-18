@@ -6,6 +6,7 @@ fn main() {
     buf.put(&b"Hello, world!"[..]);
 
     println!("buf: {:?}", buf);
+    println!("buf pointer: {:p}", &buf);
     println!("buf.len(): {}", buf.len());
     println!("buf.capacity(): {}", buf.capacity());
 
@@ -36,6 +37,8 @@ fn main() {
     println!("let frozen = buf.freeze();");
     println!("buf is consumed");
     println!("frozen buf: {:?}", frozen);
+    println!("frozen: {:?}", frozen);
+    println!("frozen.len(): {}", frozen.len());
 
     // Step 6: 使用 put 添加更多数据
     let mut buf2 = BytesMut::new();

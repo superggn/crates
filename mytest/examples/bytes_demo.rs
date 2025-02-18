@@ -6,6 +6,7 @@ fn main() {
     buf.put(&b"Hello, world!"[..]);
 
     println!("buf: {:?}", buf);
+    println!("buf pointer: {:p}", &buf);
     println!("buf.len(): {}", buf.len());
     println!("buf.capacity(): {}", buf.capacity());
 
