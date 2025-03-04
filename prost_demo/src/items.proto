@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package abi;
+
+message MyStudent {
+  enum Grade {
+    UNKNOWN = 0;
+    FRESHMAN = 1;
+    SOPHOMORE = 2;
+    JUNIOR = 3;
+    SENIOR = 4;
+  }
+  string name = 1;
+  Grade grade = 2;
+  oneof extra_data {
+    int32 age = 3;
+    string address = 4;
+  }
+}

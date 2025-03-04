@@ -1,16 +1,37 @@
-mod msg;
+use abi::{
+    MyStudent,
+    my_student::{ExtraData, Grade},
+};
+use prost::Message;
 
+pub mod abi {
+    include!(concat!(env!("OUT_DIR"), "/abi.rs"));
+}
 fn main() {
-    let msg = msg::SearchRequest {
-        query: "query_string".to_string(),
-        page_number: 100,
-        results_per_page: 10,
+    // encode + decode
+    let stu = MyStudent {
+        name: "andy".to_string(),
+        // 注意， 这里的 size 虽然定义是 enum， 但并没有严格限制取值为 0/1/2
+        // 即使这里用 10 也是合法的， 只是没有对应的 string name 而已
+        // grade: 10,
+        grade: Grade::Freshman.into(),
+        // extra_data: Some(ExtraData::Age(19)),
+        extra_data: Some(ExtraData::Address("断罪小学".to_string())),
     };
-    println!("msg_1: {:?}", msg);
-    let encoded = prost::Message::encode_to_vec(&msg);
-    println!("encoded: {:?}", encoded);
-    let decoded: msg::SearchRequest = prost::Message::decode(&*encoded).unwrap();
-    println!("decoded: {:?}", decoded);
-    assert_eq!(msg, decoded);
-    println!("Hello, world!");
+    println!("stu: {:?}", stu);
+    let mut buf = Vec::new();
+    stu.encode(&mut buf).unwrap();
+    println!("encoded stu: {:?}", buf);
+    let transferred_stu = MyStudent::decode(&buf[..]).unwrap();
+    println!("transferred_stu: {:?}", transferred_stu);
+    assert_eq!(stu, transferred_stu);
+    println!("assertion passed!");
+    // serde compatibility
+    let ser = serde_json::to_string(&stu).unwrap();
+    println!("ser json: {:?}", ser);
+    let des: MyStudent = serde_json::from_str(&ser).unwrap();
+    println!("des json: {:?}", des);
+    assert_eq!(stu, des);
+    println!("assertion passed!");
+    println!("haha!");
 }
