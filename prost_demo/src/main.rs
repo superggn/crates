@@ -3,6 +3,7 @@ use abi::{
     my_student::{ExtraData, Grade},
 };
 use prost::Message;
+use prost_types::Timestamp;
 
 pub mod abi {
     include!(concat!(env!("OUT_DIR"), "/abi.rs"));
@@ -33,5 +34,14 @@ fn main() {
     println!("des json: {:?}", des);
     assert_eq!(stu, des);
     println!("assertion passed!");
-    println!("haha!");
+    // prost-types => WKT (Well-Known-Types)
+    let t1 = Timestamp::date_time(2025, 3, 4, 0, 0, 0).unwrap();
+    println!("t1: {:?}", t1);
+    let mut buf_t = Vec::new();
+    t1.encode(&mut buf_t).unwrap();
+    println!("encoded timestamp: {:?}", buf_t);
+    let t2 = Timestamp::decode(&buf_t[..]).unwrap();
+    println!("decoded timestamp: {:?}", t2);
+    assert_eq!(t1, t2);
+    println!("assertion passed!");
 }
