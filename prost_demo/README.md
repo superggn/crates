@@ -2,6 +2,17 @@
 
 ## 概述
 
+说人话
+
+- prost + prost-build
+    - 写 proto, build .rs 文件
+    - 通过环境变量拿 .rs 文件来开发， 不要把自动生成的 .rs 文件放到 src 里
+- prost + prost-types
+    - 不用自己写 proto 文件
+    - 一些常见的结果， 比如时间戳啥的， 都给定义好了， 直接用即可
+
+
+
 当前文件为 tokio 旗下的 prost / prost_build / prost_types 整理了一些例子， 供参考
 
 例子都在 main.rs 里， 直接 cargo run 即可
