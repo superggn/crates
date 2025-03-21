@@ -15,7 +15,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>
         .build()?;
 
     // Create a tracer provider with the exporter
-    let _ = opentelemetry_sdk::trace::SdkTracerProvider::builder()
+    let tracer_provider = opentelemetry_sdk::trace::SdkTracerProvider::builder()
         .with_simple_exporter(otlp_exporter)
         .build();
 
