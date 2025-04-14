@@ -19,9 +19,9 @@ fn main() {
     println!("buf.capacity(): {}", buf.capacity());
     println!("=========================");
 
-    // Step 3: 使用 advance_mut 移动缓冲区的有效数据部分
+    // Step 3: 使用 advance_mut(cnt) 移动缓冲区的有效数据部分, 向后扩cnt位
     unsafe {
-        buf.advance_mut(7); // 这个操作后，缓冲区会变成 "world!"
+        buf.advance_mut(7); // 这个操作后，缓冲区会变成 "Hello, world!......"
     }
     println!("buf.advance_mut(7)");
     println!("buf: {:?}", buf);
