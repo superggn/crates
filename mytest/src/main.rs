@@ -1,13 +1,9 @@
 fn main() {
-    // let mut v = vec![1, 2, 3, 4, 5];
-    // let slice = &v[..];
-    // println!("v: {:?}", v);
-    // println!("slice: {:?}", slice);
-    // v.pop();
-    // println!("v: {:?}", v);
-    // // println!("slice: {:?}", slice);
-    // v[0] = 10;
-    // println!("v: {:?}", v);
-    // // println!("slice: {:?}", slice);
+    let buf = [0; 10];
+    let buf_slice = &buf[..];
+    println!("buf: {:?}", buf);
+    println!("buf_slice: {:?}", buf_slice);
+    println!("buf: {:?}", buf);
+    println!("buf_slice: {:?}", buf_slice);
+    let buf_slice_2 = &buf[..];
 }
-fn func_1(s: &str) {}

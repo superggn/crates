@@ -1,44 +1,83 @@
-use futures::prelude::*;
+use anyhow::Result;
+use futures::{Stream as FutureStream, prelude::*};
 use tokio::net::{TcpListener, TcpStream};
-use tokio_util::compat::{Compat, FuturesAsyncReadCompatExt, TokioAsyncReadCompatExt};
-use yamux::{Config, Connection, Mode};
+use tokio_util::{
+    codec::{Framed, LinesCodec},
+    compat::{FuturesAsyncReadCompatExt, TokioAsyncReadCompatExt},
+};
+use tracing::info;
+use yamux::{Config, Connection, Mode, Stream};
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Connect to a server (or use TcpListener for the server side)
-    let socket = TcpStream::connect("127.0.0.1:8000").await?;
-    println!("start listening on 8000!");
-    let addr = "127.0.0.1:9527";
+async fn main() -> Result<()> {
+    tracing_subscriber::fmt::init();
+    let addr = "0.0.0.0:8080";
     let listener = TcpListener::bind(addr).await?;
-    while let Ok((raw_stream, addr)) = listener.accept().await {
-        let mut server_conn = Connection::new(raw_stream.compat(), Config::default(), Mode::Server);
-
-        tokio::spawn(async move {
-            while let Some(stream) = server_conn.poll_next_inbound(&mut cx).await? {
-                // 3. 为每个流启动处理逻辑
-                tokio::spawn(async move {
-                    handle_stream(yamux_stream).await;
-                });
-            }
-        });
-    }
-
-    // Create a Yamux connection in client mode
-    let config = Config::default();
-    let mut yamux = Connection::new(socket.compat(), config, Mode::Server);
-
-    // Open a new outbound Yamux stream
-    let mut inbound = futures::future::poll_fn(|cx| yamux.poll_next_inbound(cx))
-        .await
-        .unwrap()?;
-
-    // Write some data
-    // Read a response
-    let mut buf = [0u8; 1024];
-    let n = inbound.read(&mut buf).await?;
-    println!("Received: {}", String::from_utf8_lossy(&buf[..n]));
-    inbound.write_all(b"hello yamux!").await?;
-
-    println!("ha!");
+    info!("Listening on: {:?}", addr);
+    let mut config = Config::default();
+    // largest frame size? => todo confirm meaning
+    config.set_split_send_size(4 * 1024);
+    run_server(listener, config).await?;
     Ok(())
 }
+
+/// spawn new worker?
+async fn run_server(listener: TcpListener, config: Config) -> Result<()> {
+    loop {
+        let (stream, addr) = listener.accept().await?;
+        info!("Accepted: {:?}", addr);
+
+        tokio::spawn(handle_connection(stream, config.clone()));
+    }
+}
+
+async fn handle_connection(raw_stream: TcpStream, config: Config) {
+    let mut conn = Connection::new(raw_stream.compat(), config, Mode::Server);
+
+    // use fututre::poll_fn => xxx.await
+    // use stream::poll_fn => xxx.next().await
+    let mut server = stream::poll_fn(move |cx| conn.poll_next_inbound(cx));
+    match server.next().await {
+        Some(Ok(stream)) => {
+            tokio::spawn(noop_server(server));
+            process_client(stream).await;
+        }
+        Some(Err(e)) => {
+            handle_error(e);
+        }
+        None => {
+            // Handle None case if needed
+        }
+    }
+}
+
+async fn process_client(stream: Stream) {
+    let mut framed = Framed::new(stream.compat(), LinesCodec::new());
+
+    while let Some(Ok(line)) = framed.next().await {
+        println!("Got: {}", line);
+        framed
+            .send(format!("Hello! I got '{}'", line))
+            .await
+            .unwrap();
+    }
+}
+
+fn handle_error(error: yamux::ConnectionError) {
+    println!("Error: {:?}", error);
+    // Handle the error as needed
+}
+
+/// For each incoming stream, do nothing.
+pub async fn noop_server(
+    c: impl FutureStream<Item = Result<yamux::Stream, yamux::ConnectionError>>,
+) {
+    c.for_each(|maybe_stream| {
+        drop(maybe_stream);
+        future::ready(())
+    })
+    .await;
+}
+
+// copy from https://github.com/tyrchen/geektime-rust
+// modified with chatpgpt
