@@ -24,7 +24,6 @@ async fn start_server() {
         tokio::spawn(async move {
             loop {
                 let stream_res = yamux_handle.next_incoming().await;
-                println!("stream_res done!");
                 match stream_res {
                     Some(stream) => {
                         let mut framed = Framed::new(stream.compat(), LinesCodec::new());
