@@ -32,17 +32,17 @@ debug = 2
 # tracing-subscriber = "0.3"
 # bytes = "1"
 
-[dev-dependencies]
-criterion = "0.5"
+# [dev-dependencies]
+# criterion = "0.5"
 # axum = "0.8"
 
 # [[bench]]
 # name = "performance_bench"
 # harness = false
 
-[[bench]]
-name = "my_benchmark"
-harness = false
+# [[bench]]
+# name = "my_benchmark"
+# harness = false
 
 # [[bench]]
 # name = "fib_bench"
